@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard - Sistem Akreditasi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {overflow-x: hidden;}
+#wrapper {display: flex; width: 100%; min-height: 100vh;}
+#sidebar-wrapper {
+    min-width: 250px; max-width: 250px;
+    background-color: #fff;
+    border-right:1px solid #ddd;
+    flex-shrink:0;
+    transition: all 0.3s;
+}
+#page-content-wrapper {flex-grow:1; transition: all 0.3s;}
+.profile-section{display:flex;align-items:center;padding:0.75rem 1rem;}
+.profile-section img{width:35px;height:35px;border-radius:50%;margin-right:10px;}
+@media (max-width:768px){
+    #sidebar-wrapper{margin-left:-250px;position:fixed;height:100%;z-index:1000;}
+    #sidebar-wrapper.active{margin-left:0;box-shadow:2px 0 5px rgba(0,0,0,0.3);}
+    #overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:900;}
+    #overlay.active{display:block;}
+}
+</style>
+</head>
+<body class="bg-light">
+<div id="wrapper">
+
+<!-- Sidebar -->
+<div class="border-end bg-white" id="sidebar-wrapper">
+    <div class="sidebar-heading text-primary fs-4 p-3">Sistem Akreditasi</div>
+    
+    <div class="profile-section border-bottom mb-2">
+        <img id="userPic" src="https://via.placeholder.com/35" alt="Profile">
+        <div>
+            <div class="fw-bold" id="sidebarUserName"></div>
+            <span class="badge bg-info text-dark" id="sidebarUserRole"></span>
+        </div>
+    </div>
+
+    <div class="list-group list-group-flush mt-2" id="sidebarMenu"></div>
+
+    <button id="sidebarLogout" class="btn btn-outline-danger m-3 w-100">
+        <i class="fa fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper" class="w-100">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+            <button class="btn btn-primary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="me-3 text-muted" id="currentDate"></div>
+                <img id="userPicNav" src="https://via.placeholder.com/35" class="rounded-circle me-2" alt="Profile">
+                <span id="userName" class="fw-bold me-2"></span>
+                <span class="badge bg-secondary" id="userRoleNav"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4">
+        <h2 class="text-primary mb-4">Dashboard</h2>
+
+        <!-- Welcome Card -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Selamat datang, <span id="welcomeUser"></span>!</h5>
+                <p class="card-text">Role: <span id="welcomeRole"></span></p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-primary shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa fa-users me-2"></i>Users</h5>
+                        <p class="card-text fs-4" id="statUsers">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-success shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa fa-graduation-cap me-2"></i>Prodi</h5>
+                        <p class="card-text fs-4" id="statProdi">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-warning shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa fa-building me-2"></i>Fakultas</h5>
+                        <p class="card-text fs-4" id="statFakultas">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-danger shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fa fa-book me-2"></i>Akreditasi</h5>
+                        <p class="card-text fs-4" id="statAkreditasi">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <h4 class="mt-4 mb-3">Quick Access</h4>
+        <div class="row" id="quickLinks"></div>
+
+    </div>
+</div>
+</div>
+
+<div id="overlay"></div>
+
+<script>
+// ======= Current User =======
+const user = JSON.parse(localStorage.getItem('currentUser')) || {user_role:"Administrator", name:"Admin"};
+document.getElementById('userName').textContent = user.name;
+document.getElementById('userRoleNav').textContent = user.user_role;
+document.getElementById('sidebarUserName').textContent = user.name;
+document.getElementById('sidebarUserRole').textContent = user.user_role;
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+document.getElementById('welcomeUser').textContent = user.name;
+document.getElementById('welcomeRole').textContent = user.user_role;
+
+// ======= Sidebar Menu =======
+const menuItems = {
+    "Administrator": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Manajemen Data User", href:"manajemen_user.html", icon:"fa-user-shield"},
+        {text:"Manajemen Data Prodi", href:"manajemen_prodi.html", icon:"fa-graduation-cap"},
+        {text:"Manajemen Data Fakultas", href:"manajemen_fakultas.html", icon:"fa-building"},
+        {text:"Manajemen Data Akreditasi", href:"manajemen_akreditasi.html", icon:"fa-book"},
+        {text:"Transaksi Status Akreditasi", href:"transaksi_status.html", icon:"fa-exchange-alt"},
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"}
+    ],
+    "Kepala LPMPP": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Transaksi Status Akreditasi", href:"transaksi_status.html", icon:"fa-exchange-alt"},
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"}
+    ]
+};
+
+const sidebarMenu = document.getElementById('sidebarMenu');
+menuItems[user.user_role].forEach(item => {
+    const a = document.createElement('a');
+    a.href = item.href;
+    a.className = "list-group-item list-group-item-action bg-light d-flex align-items-center";
+    a.innerHTML = `<i class="fa ${item.icon} me-2"></i>${item.text}`;
+    if(window.location.pathname.endsWith(item.href)) a.classList.add("active","bg-primary","text-white");
+    sidebarMenu.appendChild(a);
+});
+
+// ======= Quick Links =======
+const quickLinksContainer = document.getElementById('quickLinks');
+const links = user.user_role==="Administrator" ? [
+    {text:"Manajemen Data User", href:"manajemen_user.html", color:"primary", icon:"fa-user-shield"},
+    {text:"Manajemen Prodi", href:"manajemen_prodi.html", color:"success", icon:"fa-graduation-cap"},
+    {text:"Manajemen Fakultas", href:"manajemen_fakultas.html", color:"warning", icon:"fa-building"},
+    {text:"Manajemen Akreditasi", href:"manajemen_akreditasi.html", color:"danger", icon:"fa-book"},
+    {text:"Transaksi Status", href:"transaksi_status.html", color:"info", icon:"fa-exchange-alt"},
+    {text:"Laporan Detail", href:"laporan_detail.html", color:"secondary", icon:"fa-file-alt"},
+    {text:"Laporan Rekap", href:"laporan_rekap.html", color:"dark", icon:"fa-file"}
+] : [
+    {text:"Transaksi Status", href:"transaksi_status.html", color:"primary", icon:"fa-exchange-alt"},
+    {text:"Laporan Detail", href:"laporan_detail.html", color:"info", icon:"fa-file-alt"},
+    {text:"Laporan Rekap", href:"laporan_rekap.html", color:"secondary", icon:"fa-file"}
+];
+
+links.forEach(l=>{
+    const col = document.createElement('div');
+    col.className="col-md-3 mb-3";
+    col.innerHTML = `
+        <a href="${l.href}" class="card text-white bg-${l.color} shadow-sm text-center py-3 d-block text-decoration-none">
+            <i class="fa ${l.icon} fa-2x mb-2"></i><br>${l.text}
+        </a>`;
+    quickLinksContainer.appendChild(col);
+});
+
+// ======= Logout & Sidebar Toggle =======
+document.getElementById('sidebarLogout').onclick=()=>{
+    localStorage.removeItem('currentUser');
+    window.location.href="login.html";
+};
+const sidebarWrapper=document.getElementById('sidebar-wrapper');
+const overlay=document.getElementById('overlay');
+document.getElementById('sidebarToggle').onclick=()=>{
+    sidebarWrapper.classList.toggle('active');
+    overlay.classList.toggle('active');
+};
+overlay.onclick=()=>{
+    sidebarWrapper.classList.remove('active');
+    overlay.classList.remove('active');
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

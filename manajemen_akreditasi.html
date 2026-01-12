@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manajemen Akreditasi - Sistem Akreditasi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {overflow-x: hidden;}
+#wrapper {display: flex; width: 100%; min-height: 100vh;}
+#sidebar-wrapper {
+    min-width: 250px; max-width: 250px;
+    background-color: #fff;
+    border-right:1px solid #ddd;
+    flex-shrink:0;
+    transition: all 0.3s;
+}
+#page-content-wrapper {flex-grow:1; transition: all 0.3s;}
+.profile-section{display:flex;align-items:center;padding:0.75rem 1rem;}
+.profile-section img{width:35px;height:35px;border-radius:50%;margin-right:10px;}
+@media (max-width:768px){
+    #sidebar-wrapper{margin-left:-250px;position:fixed;height:100%;z-index:1000;}
+    #sidebar-wrapper.active{margin-left:0;box-shadow:2px 0 5px rgba(0,0,0,0.3);}
+    #overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:900;}
+    #overlay.active{display:block;}
+}
+</style>
+</head>
+<body class="bg-light">
+<div id="wrapper">
+
+<!-- Sidebar -->
+<div class="border-end bg-white" id="sidebar-wrapper">
+    <div class="sidebar-heading text-primary fs-4 p-3">Sistem Akreditasi</div>
+    <div class="profile-section border-bottom mb-2">
+        <img id="userPic" src="https://via.placeholder.com/35" alt="Profile">
+        <div>
+            <div class="fw-bold" id="sidebarUserName"></div>
+            <span class="badge bg-info text-dark" id="sidebarUserRole"></span>
+        </div>
+    </div>
+
+    <div class="list-group list-group-flush mt-2" id="sidebarMenu"></div>
+
+    <button id="sidebarLogout" class="btn btn-outline-danger m-3 w-100">
+        <i class="fa fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper" class="w-100">
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+<div class="container-fluid">
+<button class="btn btn-primary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+<div class="ms-auto d-flex align-items-center">
+<div class="me-3 text-muted" id="currentDate"></div>
+<img id="userPicNav" src="https://via.placeholder.com/35" class="rounded-circle me-2" alt="Profile">
+<span id="userName" class="fw-bold me-2"></span>
+<span class="badge bg-secondary" id="userRoleNav"></span>
+</div>
+</div>
+</nav>
+
+<div class="container-fluid p-4">
+    <h2 class="text-primary mb-4">Manajemen Akreditasi</h2>
+
+    <div class="mb-3 d-flex justify-content-between">
+        <button class="btn btn-success" id="addAkreditasiBtn"><i class="fa fa-plus"></i> Tambah Akreditasi</button>
+        <input type="text" class="form-control w-25" id="searchInput" placeholder="Cari Prodi...">
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID Akreditasi</th>
+                        <th>Prodi</th>
+                        <th>Periode Mulai</th>
+                        <th>Periode Selesai</th>
+                        <th>Status</th>
+                        <th>Peringkat</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="akreditasiTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        <button class="btn btn-outline-primary" id="prevBtn">Prev</button>
+        <span id="pageInfo"></span>
+        <button class="btn btn-outline-primary" id="nextBtn">Next</button>
+    </div>
+</div>
+</div>
+</div>
+
+<div id="overlay"></div>
+
+<!-- Akreditasi Modal -->
+<div class="modal fade" id="akreditasiModal" tabindex="-1" aria-labelledby="akreditasiModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+<div class="modal-content">
+<form id="akreditasiForm">
+<div class="modal-header">
+<h5 class="modal-title" id="akreditasiModalLabel">Tambah Akreditasi</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+    <input type="hidden" id="modalMode" value="add">
+    <div class="mb-3">
+        <label for="idAkreditasi" class="form-label">ID Akreditasi</label>
+        <input type="text" id="idAkreditasi" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="namaProdi" class="form-label">Nama Prodi</label>
+        <input type="text" id="namaProdi" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="periodeMulai" class="form-label">Periode Mulai</label>
+        <input type="date" id="periodeMulai" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="periodeSelesai" class="form-label">Periode Selesai</label>
+        <input type="date" id="periodeSelesai" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="statusAkreditasi" class="form-label">Status</label>
+        <select id="statusAkreditasi" class="form-control">
+            <option>Aktif</option>
+            <option>Tidak Aktif</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="peringkatAkreditasi" class="form-label">Peringkat</label>
+        <select id="peringkatAkreditasi" class="form-control" required>
+            <option>Baik</option>
+            <option>Baik Sekali</option>
+            <option>Unggul</option>
+        </select>
+    </div>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+  <button type="submit" class="btn btn-primary">Simpan</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ======= User & Sidebar =======
+const user = JSON.parse(localStorage.getItem('currentUser')) || {user_role:"Administrator", name:"Admin"};
+if(user.user_role !== "Administrator"){ alert("Hanya Administrator!"); window.location.href="dashboard.html"; }
+document.getElementById('userName').textContent = user.name;
+document.getElementById('userRoleNav').textContent = user.user_role;
+document.getElementById('sidebarUserName').textContent = user.name;
+document.getElementById('sidebarUserRole').textContent = user.user_role;
+document.getElementById('userPic').src = "https://via.placeholder.com/35";
+document.getElementById('userPicNav').src = "https://via.placeholder.com/35";
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+
+const menuItems = {
+    "Administrator": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Manajemen Data User", href:"manajemen_user.html", icon:"fa-user-shield"},
+        {text:"Manajemen Data Prodi", href:"manajemen_prodi.html", icon:"fa-graduation-cap"},
+        {text:"Manajemen Data Fakultas", href:"manajemen_fakultas.html", icon:"fa-building"},
+        {text:"Manajemen Data Akreditasi", href:"manajemen_akreditasi.html", icon:"fa-book"},
+        {text:"Transaksi Status Akreditasi", href:"transaksi_status.html", icon:"fa-exchange-alt"},
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"}
+    ]
+};
+
+const sidebarMenu = document.getElementById('sidebarMenu');
+menuItems[user.user_role].forEach(item => {
+    const a = document.createElement('a');
+    a.href = item.href;
+    a.className = "list-group-item list-group-item-action bg-light d-flex align-items-center";
+    a.innerHTML = `<i class="fa ${item.icon} me-2"></i>${item.text}`;
+    if(window.location.pathname.endsWith(item.href)) a.classList.add("active","bg-primary","text-white");
+    sidebarMenu.appendChild(a);
+});
+
+document.getElementById('sidebarLogout').addEventListener('click',()=>{ localStorage.removeItem('currentUser'); window.location.href="login.html"; });
+const sidebarWrapper = document.getElementById('sidebar-wrapper');
+const overlay = document.getElementById('overlay');
+document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebarWrapper.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click',()=>{ sidebarWrapper.classList.remove('active'); overlay.classList.remove('active'); });
+
+// ======= Dummy Akreditasi Data (20) =======
+let akreditasi = [];
+for(let i=1;i<=20;i++){
+    akreditasi.push({
+        id:`A${i.toString().padStart(3,'0')}`,
+        prodi:`Prodi ${i}`,
+        mulai:`202${i%5}-01-01`,
+        selesai:`202${i%5+4}-12-31`,
+        status: i%2===0?"Aktif":"Tidak Aktif",
+        peringkat:["Baik","Baik Sekali","Unggul"][i%3]
+    });
+}
+
+// ======= Pagination =======
+let currentPage = 1;
+const rowsPerPage = 5;
+const tbody = document.getElementById('akreditasiTableBody');
+const pageInfo = document.getElementById('pageInfo');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function renderTable(data){
+    tbody.innerHTML="";
+    const start = (currentPage-1)*rowsPerPage;
+    const end = start+rowsPerPage;
+    const pageData = data.slice(start,end);
+
+    pageData.forEach((a,index)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${a.id}</td>
+            <td>${a.prodi}</td>
+            <td>${a.mulai}</td>
+            <td>${a.selesai}</td>
+            <td>${a.status}</td>
+            <td>${a.peringkat}</td>
+            <td>
+                <button class="btn btn-sm btn-light me-2" onclick="editAkreditasi(${start+index})"><i class="fa fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteAkreditasi(${start+index})"><i class="fa fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    pageInfo.textContent = `Page ${currentPage} of ${Math.ceil(data.length/rowsPerPage)}`;
+    prevBtn.disabled = currentPage===1;
+    nextBtn.disabled = end>=data.length;
+}
+
+renderTable(akreditasi);
+
+prevBtn.addEventListener('click', ()=>{ currentPage--; renderTable(filteredAkreditasi); });
+nextBtn.addEventListener('click', ()=>{ currentPage++; renderTable(filteredAkreditasi); });
+
+// ======= Search =======
+let filteredAkreditasi = [...akreditasi];
+document.getElementById('searchInput').addEventListener('input', e=>{
+    const val = e.target.value.toLowerCase();
+    filteredAkreditasi = akreditasi.filter(a=>a.prodi.toLowerCase().includes(val));
+    currentPage=1;
+    renderTable(filteredAkreditasi);
+});
+
+// ======= Add/Edit Modal =======
+const akreditasiForm = document.getElementById('akreditasiForm');
+akreditasiForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    const mode = document.getElementById('modalMode').value;
+    const obj = {
+        id: document.getElementById('idAkreditasi').value,
+        prodi: document.getElementById('namaProdi').value,
+        mulai: document.getElementById('periodeMulai').value,
+        selesai: document.getElementById('periodeSelesai').value,
+        status: document.getElementById('statusAkreditasi').value,
+        peringkat: document.getElementById('peringkatAkreditasi').value
+    };
+    if(mode==="add") akreditasi.push(obj);
+    else akreditasi[parseInt(document.getElementById('modalMode').dataset.index)] = obj;
+
+    filteredAkreditasi = [...akreditasi];
+    renderTable(filteredAkreditasi);
+    bootstrap.Modal.getInstance(document.getElementById('akreditasiModal')).hide();
+});
+
+window.editAkreditasi = function(index){
+    const a = akreditasi[index];
+    document.getElementById('modalMode').value="edit";
+    document.getElementById('modalMode').dataset.index=index;
+    document.getElementById('idAkreditasi').value=a.id;
+    document.getElementById('namaProdi').value=a.prodi;
+    document.getElementById('periodeMulai').value=a.mulai;
+    document.getElementById('periodeSelesai').value=a.selesai;
+    document.getElementById('statusAkreditasi').value=a.status;
+    document.getElementById('peringkatAkreditasi').value=a.peringkat;
+    new bootstrap.Modal(document.getElementById('akreditasiModal')).show();
+}
+
+window.deleteAkreditasi = function(index){
+    if(confirm(`Hapus akreditasi ${akreditasi[index].id}?`)){
+        akreditasi.splice(index,1);
+        filteredAkreditasi = [...akreditasi];
+        renderTable(filteredAkreditasi);
+    }
+}
+
+document.getElementById('addAkreditasiBtn').addEventListener('click', ()=>{
+    akreditasiForm.reset();
+    document.getElementById('modalMode').value="add";
+    new bootstrap.Modal(document.getElementById('akreditasiModal')).show();
+});
+</script>
+</body>
+</html>

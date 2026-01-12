@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Transaksi Status Akreditasi - Sistem Akreditasi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {overflow-x: hidden; background-color: #f8f9fa;}
+#wrapper {display: flex; width: 100%; min-height: 100vh;}
+#sidebar-wrapper {
+    min-width: 250px; max-width: 250px;
+    background-color: #fff;
+    border-right:1px solid #ddd;
+    flex-shrink:0;
+    transition: all 0.3s;
+}
+#page-content-wrapper {flex-grow:1; transition: all 0.3s;}
+.profile-section{display:flex;align-items:center;padding:0.75rem 1rem;}
+.profile-section img{width:35px;height:35px;border-radius:50%;margin-right:10px;}
+.table-hover tbody tr:hover{background-color:#e9ecef;}
+@media (max-width:768px){
+    #sidebar-wrapper{margin-left:-250px;position:fixed;height:100%;z-index:1000;}
+    #sidebar-wrapper.active{margin-left:0;box-shadow:2px 0 5px rgba(0,0,0,0.3);}
+    #overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:900;}
+    #overlay.active{display:block;}
+}
+.progress {height: 20px;}
+</style>
+</head>
+<body class="bg-light">
+<div id="wrapper">
+
+<!-- Sidebar -->
+<div class="border-end bg-white" id="sidebar-wrapper">
+    <div class="sidebar-heading text-primary fs-4 p-3">Sistem Akreditasi</div>
+    
+    <div class="profile-section border-bottom mb-2">
+        <img id="userPic" src="https://via.placeholder.com/35" alt="Profile">
+        <div>
+            <div class="fw-bold" id="sidebarUserName"></div>
+            <span class="badge bg-info text-dark" id="sidebarUserRole"></span>
+        </div>
+    </div>
+
+    <div class="list-group list-group-flush mt-2" id="sidebarMenu"></div>
+
+    <button id="sidebarLogout" class="btn btn-outline-danger m-3 w-100">
+        <i class="fa fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper" class="w-100">
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+<div class="container-fluid">
+<button class="btn btn-primary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+<div class="ms-auto d-flex align-items-center">
+<div class="me-3 text-muted" id="currentDate"></div>
+<img id="userPicNav" src="https://via.placeholder.com/35" class="rounded-circle me-2" alt="Profile">
+<span id="userName" class="fw-bold me-2"></span>
+<span class="badge bg-secondary" id="userRoleNav"></span>
+</div>
+</div>
+</nav>
+
+<div class="container-fluid p-4">
+    <h2 class="text-primary mb-4">Transaksi Status Akreditasi</h2>
+
+    <div class="mb-3 d-flex justify-content-between">
+        <button class="btn btn-success" id="exportBtn"><i class="fa fa-file-excel"></i> Ekspor ke Spreadsheet</button>
+        <input type="text" class="form-control w-25" id="searchInput" placeholder="Cari Prodi / Unit Kerja...">
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped table-bordered mb-0 table-hover" id="transaksiTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID Transaksi</th>
+                        <th>Unit Kerja / Prodi</th>
+                        <th>Status Saat Ini</th>
+                        <th>Progress</th>
+                        <th>Posisi Berkas</th>
+                        <th>Aksi (Terhenti Sejak)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<div id="overlay"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ======= Current User =======
+const user = JSON.parse(localStorage.getItem('currentUser')) || {user_role:"Administrator", name:"Admin"};
+document.getElementById('userName').textContent = user.name;
+document.getElementById('userRoleNav').textContent = user.user_role;
+document.getElementById('sidebarUserName').textContent = user.name;
+document.getElementById('sidebarUserRole').textContent = user.user_role;
+document.getElementById('userPic').src = "https://via.placeholder.com/35";
+document.getElementById('userPicNav').src = "https://via.placeholder.com/35";
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+
+// ======= Sidebar Menu =======
+const menuItems = {
+    "Administrator": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Manajemen Data User", href:"manajemen_user.html", icon:"fa-user-shield"},
+        {text:"Manajemen Data Prodi", href:"manajemen_prodi.html", icon:"fa-graduation-cap"},
+        {text:"Manajemen Data Fakultas", href:"manajemen_fakultas.html", icon:"fa-building"},
+        {text:"Manajemen Data Akreditasi", href:"manajemen_akreditasi.html", icon:"fa-book"},
+        {text:"Manajemen Transaksi Status", href:"transaksi_status.html", icon:"fa-tasks"},
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"}
+    ],
+    "Kepala LPMPP": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"},
+        {text:"Transaksi Status Akreditasi", href:"transaksi_status.html", icon:"fa-tasks"}
+    ]
+};
+
+const sidebarMenu = document.getElementById('sidebarMenu');
+menuItems[user.user_role].forEach(item => {
+    const a = document.createElement('a');
+    a.href = item.href;
+    a.className = "list-group-item list-group-item-action bg-light d-flex align-items-center";
+    a.innerHTML = `<i class="fa ${item.icon} me-2"></i>${item.text}`;
+    
+    // Highlight active menu
+    const currentPath = window.location.pathname.split("/").pop();
+    if(currentPath === item.href) a.classList.add("active","bg-primary","text-white");
+    
+    sidebarMenu.appendChild(a);
+});
+
+
+// Logout & Sidebar Toggle
+document.getElementById('sidebarLogout').addEventListener('click',()=>{ localStorage.removeItem('currentUser'); window.location.href="login.html"; });
+const sidebarWrapper = document.getElementById('sidebar-wrapper');
+const overlay = document.getElementById('overlay');
+document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebarWrapper.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click',()=>{ sidebarWrapper.classList.remove('active'); overlay.classList.remove('active'); });
+
+// ======= Dummy Transaksi Data =======
+let transaksiData = [
+    {id:"#TRX-001", unit:"Teknik Informatika", status:"Verval Dokumen", progress:40, posisi:"Di Meja Admin", aksi:"2 Hari Lalu"},
+    {id:"#TRX-002", unit:"Manajemen", status:"Review Akhir", progress:70, posisi:"Di Meja Ka. LPMPP", aksi:"1 Jam Lalu"},
+    {id:"#TRX-003", unit:"Akuntansi", status:"Terakreditasi", progress:100, posisi:"Selesai", aksi:"-"},
+    {id:"#TRX-004", unit:"Sistem Informasi", status:"Verval Dokumen", progress:30, posisi:"Di Meja Admin", aksi:"5 Hari Lalu"},
+    {id:"#TRX-005", unit:"Ekonomi", status:"Review Akhir", progress:60, posisi:"Di Meja Ka. LPMPP", aksi:"3 Jam Lalu"},
+    {id:"#TRX-006", unit:"Psikologi", status:"Verval Dokumen", progress:25, posisi:"Di Meja Admin", aksi:"1 Hari Lalu"},
+    {id:"#TRX-007", unit:"Hukum", status:"Review Akhir", progress:80, posisi:"Di Meja Ka. LPMPP", aksi:"30 Menit Lalu"},
+    {id:"#TRX-008", unit:"Teknik Mesin", status:"Terakreditasi", progress:100, posisi:"Selesai", aksi:"-"},
+    {id:"#TRX-009", unit:"Akuntansi", status:"Verval Dokumen", progress:20, posisi:"Di Meja Admin", aksi:"2 Hari Lalu"},
+    {id:"#TRX-010", unit:"Manajemen", status:"Review Akhir", progress:65, posisi:"Di Meja Ka. LPMPP", aksi:"2 Jam Lalu"}
+];
+
+// ======= Render Table =======
+function renderTransaksiTable(filter=""){
+    const tbody = document.querySelector('#transaksiTable tbody');
+    tbody.innerHTML = "";
+    transaksiData.filter(t => t.unit.toLowerCase().includes(filter.toLowerCase()) || t.id.toLowerCase().includes(filter.toLowerCase())).forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${t.id}</td>
+            <td>${t.unit}</td>
+            <td>${t.status}</td>
+            <td>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width:${t.progress}%" aria-valuenow="${t.progress}" aria-valuemin="0" aria-valuemax="100">${t.progress}%</div>
+                </div>
+            </td>
+            <td>${t.posisi}</td>
+            <td>${t.aksi}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ======= Search =======
+document.getElementById('searchInput').addEventListener('input', e => {
+    renderTransaksiTable(e.target.value);
+});
+
+// ======= Export to CSV =======
+document.getElementById('exportBtn').addEventListener('click', () => {
+    let csv = "ID Transaksi,Unit Kerja / Prodi,Status,Progress (%),Posisi Berkas,Aksi\n";
+    transaksiData.forEach(t=>{
+        csv += `${t.id},${t.unit},${t.status},${t.progress},${t.posisi},${t.aksi}\n`;
+    });
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "transaksi_status_akreditasi.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+// ======= Initial Render =======
+renderTransaksiTable();
+</script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manajemen Program Studi - Sistem Akreditasi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {overflow-x: hidden;}
+#wrapper {display: flex; width: 100%; min-height: 100vh;}
+#sidebar-wrapper {
+    min-width: 250px; max-width: 250px;
+    background-color: #fff;
+    border-right:1px solid #ddd;
+    flex-shrink:0;
+    transition: all 0.3s;
+}
+#page-content-wrapper {flex-grow:1; transition: all 0.3s;}
+.profile-section{display:flex;align-items:center;padding:0.75rem 1rem;}
+.profile-section img{width:35px;height:35px;border-radius:50%;margin-right:10px;}
+@media (max-width:768px){
+    #sidebar-wrapper{margin-left:-250px;position:fixed;height:100%;z-index:1000;}
+    #sidebar-wrapper.active{margin-left:0;box-shadow:2px 0 5px rgba(0,0,0,0.3);}
+    #overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:900;}
+    #overlay.active{display:block;}
+}
+</style>
+</head>
+<body class="bg-light">
+<div id="wrapper">
+
+<!-- Sidebar -->
+<div class="border-end bg-white" id="sidebar-wrapper">
+    <div class="sidebar-heading text-primary fs-4 p-3">Sistem Akreditasi</div>
+    <div class="profile-section border-bottom mb-2">
+        <img id="userPic" src="https://via.placeholder.com/35" alt="Profile">
+        <div>
+            <div class="fw-bold" id="sidebarUserName"></div>
+            <span class="badge bg-info text-dark" id="sidebarUserRole"></span>
+        </div>
+    </div>
+
+    <div class="list-group list-group-flush mt-2" id="sidebarMenu"></div>
+
+    <button id="sidebarLogout" class="btn btn-outline-danger m-3 w-100">
+        <i class="fa fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper" class="w-100">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+            <button class="btn btn-primary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="me-3 text-muted" id="currentDate"></div>
+                <img id="userPicNav" src="https://via.placeholder.com/35" class="rounded-circle me-2" alt="Profile">
+                <span id="userName" class="fw-bold me-2"></span>
+                <span class="badge bg-secondary" id="userRoleNav"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4">
+        <h2 class="text-primary mb-4">Manajemen Data Program Studi</h2>
+
+        <!-- Add Prodi Button -->
+        <div class="mb-3">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#prodiModal">
+                <i class="fa fa-plus"></i> Tambah Program Studi
+            </button>
+        </div>
+
+        <!-- Prodi Table -->
+        <div class="table-responsive shadow-sm">
+            <table class="table table-striped table-bordered align-middle bg-white" id="prodiTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID Prodi</th>
+                        <th>Nama Prodi</th>
+                        <th>Kode Prodi</th>
+                        <th>Jenjang</th>
+                        <th>Fakultas</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-end mt-3" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+</div>
+
+<div id="overlay"></div>
+
+<!-- Modal Tambah/Edit Prodi -->
+<div class="modal fade" id="prodiModal" tabindex="-1" aria-labelledby="prodiModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="prodiForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="prodiModalLabel">Tambah Program Studi</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="modalMode" value="add">
+            <input type="hidden" id="modalIndex">
+            <div class="mb-3">
+                <label class="form-label">Nama Prodi</label>
+                <input type="text" class="form-control" id="modalNamaProdi" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Kode Prodi</label>
+                <input type="text" class="form-control" id="modalKodeProdi" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Jenjang</label>
+                <select class="form-select" id="modalJenjang" required>
+                    <option value="D3">D3</option>
+                    <option value="S1">S1</option>
+                    <option value="S2">S2</option>
+                    <option value="S3">S3</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Fakultas</label>
+                <input type="text" class="form-control" id="modalFakultas" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======= Current User & Sidebar =======
+const user = JSON.parse(localStorage.getItem('currentUser')) || {user_role:"Administrator", name:"Admin"};
+if(user.user_role !== "Administrator"){
+    alert("Hanya Administrator yang dapat mengakses halaman ini!");
+    window.location.href="dashboard.html";
+}
+document.getElementById('userName').textContent = user.name;
+document.getElementById('userRoleNav').textContent = user.user_role;
+document.getElementById('sidebarUserName').textContent = user.name;
+document.getElementById('sidebarUserRole').textContent = user.user_role;
+document.getElementById('userPic').src = "https://via.placeholder.com/35";
+document.getElementById('userPicNav').src = "https://via.placeholder.com/35";
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+
+// Sidebar Menu
+const menuItems = {
+    "Administrator": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Manajemen Data User", href:"manajemen_user.html", icon:"fa-user-shield"},
+        {text:"Manajemen Data Prodi", href:"manajemen_prodi.html", icon:"fa-graduation-cap"},
+        {text:"Manajemen Data Fakultas", href:"manajemen_fakultas.html", icon:"fa-building"},
+        {text:"Manajemen Data Akreditasi", href:"manajemen_akreditasi.html", icon:"fa-book"},
+        {text:"Transaksi Status", href:"transaksi_status.html", icon:"fa-exchange-alt"}, // NEW ITEM
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"}
+    ]
+};
+
+const sidebarMenu = document.getElementById('sidebarMenu');
+menuItems[user.user_role].forEach(item => {
+    const a = document.createElement('a');
+    a.href = item.href;
+    a.className = "list-group-item list-group-item-action bg-light d-flex align-items-center";
+    a.innerHTML = `<i class="fa ${item.icon} me-2"></i>${item.text}`;
+    if(window.location.pathname.endsWith(item.href)) a.classList.add("active","bg-primary","text-white");
+    sidebarMenu.appendChild(a);
+});
+
+// Logout & Sidebar Toggle
+document.getElementById('sidebarLogout').addEventListener('click',()=>{ localStorage.removeItem('currentUser'); window.location.href="login.html"; });
+const sidebarWrapper = document.getElementById('sidebar-wrapper');
+const overlay = document.getElementById('overlay');
+document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebarWrapper.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click',()=>{ sidebarWrapper.classList.remove('active'); overlay.classList.remove('active'); });
+
+// ======= Dummy Prodi Data =======
+// You can fill this with your full list of Prodi
+let prodiData = [
+    // Fakultas Hukum F001
+    {id_prodi:"P001", id_fakultas:"F001", nama_prodi:"S1 Hukum", kode_prodi:"S1H", jenjang:"S1"},
+    {id_prodi:"P002", id_fakultas:"F002", nama_prodi:"S1 Akuntansi", kode_prodi:"S1A", jenjang:"S1"},
+    {id_prodi:"P003", id_fakultas:"F003", nama_prodi:"S1 Agribisnis", kode_prodi:"S1AB", jenjang:"S1"},
+    
+    // Fakultas Ekonomi & Bisnis F002
+    {id_prodi:"P004", id_fakultas:"F002", nama_prodi:"S1 Akuntansi", kode_prodi:"S1A", jenjang:"S1"},
+    {id_prodi:"P005", id_fakultas:"F002", nama_prodi:"S1 Ekonomi Islam", kode_prodi:"S1EI", jenjang:"S1"},
+    {id_prodi:"P006", id_fakultas:"F002", nama_prodi:"S1 Ekonomi Pembangunan", kode_prodi:"S1EP", jenjang:"S1"},
+    {id_prodi:"P007", id_fakultas:"F002", nama_prodi:"S1 Manajemen", kode_prodi:"S1M", jenjang:"S1"},
+    {id_prodi:"P008", id_fakultas:"F002", nama_prodi:"S2 Akuntansi", kode_prodi:"S2A", jenjang:"S2"},
+    {id_prodi:"P009", id_fakultas:"F002", nama_prodi:"S2 Ilmu Ekonomi", kode_prodi:"S2IE", jenjang:"S2"},
+    {id_prodi:"P010", id_fakultas:"F002", nama_prodi:"S2 Manajemen", kode_prodi:"S2M", jenjang:"S2"},
+    {id_prodi:"P011", id_fakultas:"F002", nama_prodi:"S3 Ilmu Ekonomi", kode_prodi:"S3IE", jenjang:"S3"},
+    {id_prodi:"P012", id_fakultas:"F002", nama_prodi:"S3 Ilmu Manajemen", kode_prodi:"S3IM", jenjang:"S3"},
+
+    // Fakultas Pertanian F003
+    {id_prodi:"P013", id_fakultas:"F003", nama_prodi:"D3 Budidaya Tanaman Perkebunan", kode_prodi:"D3BTP", jenjang:"D3"},
+    {id_prodi:"P014", id_fakultas:"F003", nama_prodi:"S1 Agribisnis", kode_prodi:"S1AB", jenjang:"S1"},
+    {id_prodi:"P015", id_fakultas:"F003", nama_prodi:"S1 Agroteknologi", kode_prodi:"S1AT", jenjang:"S1"},
+    {id_prodi:"P016", id_fakultas:"F003", nama_prodi:"S1 Ilmu dan Teknologi Pangan", kode_prodi:"S1ITP", jenjang:"S1"},
+    {id_prodi:"P017", id_fakultas:"F003", nama_prodi:"S1 Ilmu Tanah", kode_prodi:"S1IT", jenjang:"S1"},
+    {id_prodi:"P018", id_fakultas:"F003", nama_prodi:"S1 Manajemen Sumberdaya Perairan", kode_prodi:"S1MSP", jenjang:"S1"},
+    {id_prodi:"P019", id_fakultas:"F003", nama_prodi:"S1 Peternakan", kode_prodi:"S1P", jenjang:"S1"},
+    {id_prodi:"P020", id_fakultas:"F003", nama_prodi:"S2 Agribisnis", kode_prodi:"S2AB", jenjang:"S2"},
+    {id_prodi:"P021", id_fakultas:"F003", nama_prodi:"S2 Agroteknologi", kode_prodi:"S2AT", jenjang:"S2"},
+    {id_prodi:"P022", id_fakultas:"F003", nama_prodi:"S2 Ilmu Tanah", kode_prodi:"S2IT", jenjang:"S2"},
+
+    // Fakultas Teknik F004
+    {id_prodi:"P023", id_fakultas:"F004", nama_prodi:"Prof Program Profesi Insinyur", kode_prodi:"ProfPI", jenjang:"Prof"},
+    {id_prodi:"P024", id_fakultas:"F004", nama_prodi:"S1 Arsitektur", kode_prodi:"S1AR", jenjang:"S1"},
+    {id_prodi:"P025", id_fakultas:"F004", nama_prodi:"S1 Informatika", kode_prodi:"S1IF", jenjang:"S1"},
+    {id_prodi:"P026", id_fakultas:"F004", nama_prodi:"S1 Perencanaan Wilayah dan Kota", kode_prodi:"S1PWK", jenjang:"S1"},
+    {id_prodi:"P027", id_fakultas:"F004", nama_prodi:"S1 Teknik Elektro", kode_prodi:"S1TE", jenjang:"S1"},
+    {id_prodi:"P028", id_fakultas:"F004", nama_prodi:"S1 Teknik Industri", kode_prodi:"S1TI", jenjang:"S1"},
+    {id_prodi:"P029", id_fakultas:"F004", nama_prodi:"S1 Teknik Kelautan", kode_prodi:"S1TK", jenjang:"S1"},
+    {id_prodi:"P030", id_fakultas:"F004", nama_prodi:"S1 Teknik Kimia", kode_prodi:"S1TKi", jenjang:"S1"},
+    {id_prodi:"P031", id_fakultas:"F004", nama_prodi:"S1 Teknik Lingkungan", kode_prodi:"S1TL", jenjang:"S1"},
+    {id_prodi:"P032", id_fakultas:"F004", nama_prodi:"S1 Teknik Mesin", kode_prodi:"S1TM", jenjang:"S1"},
+    {id_prodi:"P033", id_fakultas:"F004", nama_prodi:"S1 Teknik Pertambangan", kode_prodi:"S1TP", jenjang:"S1"},
+    {id_prodi:"P034", id_fakultas:"F004", nama_prodi:"S1 Teknik Sipil", kode_prodi:"S1TS", jenjang:"S1"},
+    {id_prodi:"P035", id_fakultas:"F004", nama_prodi:"S2 Magister Teknik Elektro", kode_prodi:"S2MTE", jenjang:"S2"},
+    {id_prodi:"P036", id_fakultas:"F004", nama_prodi:"S2 Teknik Sipil", kode_prodi:"S2TS", jenjang:"S2"},
+    {id_prodi:"P037", id_fakultas:"F004", nama_prodi:"S3 Teknik Elektro", kode_prodi:"S3TE", jenjang:"S3"},
+
+    // Fakultas Ilmu Sosial dan Ilmu Politik F005
+    {id_prodi:"P038", id_fakultas:"F005", nama_prodi:"D3 Administrasi Perkantoran", kode_prodi:"D3AP", jenjang:"D3"},
+    {id_prodi:"P039", id_fakultas:"F005", nama_prodi:"D3 Kearsipan", kode_prodi:"D3K", jenjang:"D3"},
+    {id_prodi:"P040", id_fakultas:"F005", nama_prodi:"D3 Kesekretariatan", kode_prodi:"D3KS", jenjang:"D3"},
+    {id_prodi:"P041", id_fakultas:"F005", nama_prodi:"S1 Administrasi Publik", kode_prodi:"S1AP", jenjang:"S1"},
+    {id_prodi:"P042", id_fakultas:"F005", nama_prodi:"S1 Antropologi Sosial", kode_prodi:"S1AS", jenjang:"S1"},
+    {id_prodi:"P043", id_fakultas:"F005", nama_prodi:"S1 Ilmu Hubungan Internasional", kode_prodi:"S1IHI", jenjang:"S1"},
+    {id_prodi:"P044", id_fakultas:"F005", nama_prodi:"S1 Ilmu Komunikasi", kode_prodi:"S1IK", jenjang:"S1"},
+    {id_prodi:"P045", id_fakultas:"F005", nama_prodi:"S1 Ilmu Pemerintahan", kode_prodi:"S1IP", jenjang:"S1"},
+    {id_prodi:"P046", id_fakultas:"F005", nama_prodi:"S1 Ilmu Politik", kode_prodi:"S1IPol", jenjang:"S1"},
+    {id_prodi:"P047", id_fakultas:"F005", nama_prodi:"S1 Pembangunan Sosial", kode_prodi:"S1PS", jenjang:"S1"},
+    {id_prodi:"P048", id_fakultas:"F005", nama_prodi:"S1 Sosiologi", kode_prodi:"S1S", jenjang:"S1"},
+    {id_prodi:"P049", id_fakultas:"F005", nama_prodi:"S2 Ilmu Administrasi Publik", kode_prodi:"S2IAP", jenjang:"S2"},
+    {id_prodi:"P050", id_fakultas:"F005", nama_prodi:"S2 Ilmu Politik", kode_prodi:"S2IP", jenjang:"S2"},
+    {id_prodi:"P051", id_fakultas:"F005", nama_prodi:"S2 Sosiologi", kode_prodi:"S2S", jenjang:"S2"},
+
+    // Fakultas Keguruan dan Ilmu Pendidikan F006
+    {id_prodi:"P052", id_fakultas:"F006", nama_prodi:"D3 Perpustakaan", kode_prodi:"D3P", jenjang:"D3"},
+    {id_prodi:"P053", id_fakultas:"F006", nama_prodi:"S1 Bimbingan Konseling", kode_prodi:"S1BK", jenjang:"S1"},
+    {id_prodi:"P054", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Bahasa Indonesia", kode_prodi:"S1PBI", jenjang:"S1"},
+    {id_prodi:"P055", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Bahasa Inggris", kode_prodi:"S1PBIg", jenjang:"S1"},
+    {id_prodi:"P056", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Bahasa Mandarin", kode_prodi:"S1PBM", jenjang:"S1"},
+    {id_prodi:"P057", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Biologi", kode_prodi:"S1PBio", jenjang:"S1"},
+    {id_prodi:"P058", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Ekonomi", kode_prodi:"S1PE", jenjang:"S1"},
+    {id_prodi:"P059", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Fisika", kode_prodi:"S1PF", jenjang:"S1"},
+    {id_prodi:"P060", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Geografi", kode_prodi:"S1PG", jenjang:"S1"},
+    {id_prodi:"P061", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Guru PAUD", kode_prodi:"S1PGPAUD", jenjang:"S1"},
+    {id_prodi:"P062", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Guru SD", kode_prodi:"S1PGSD", jenjang:"S1"},
+    {id_prodi:"P063", id_fakultas:"F006", nama_prodi:"S1 Pendidikan IPS", kode_prodi:"S1PIPS", jenjang:"S1"},
+    {id_prodi:"P064", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Jasmani", kode_prodi:"S1PJ", jenjang:"S1"},
+    {id_prodi:"P065", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Kepelatihan Olahraga", kode_prodi:"S1PKO", jenjang:"S1"},
+    {id_prodi:"P066", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Kimia", kode_prodi:"S1PK", jenjang:"S1"},
+    {id_prodi:"P067", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Matematika", kode_prodi:"S1PM", jenjang:"S1"},
+    {id_prodi:"P068", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Pancasila dan Kewarganegaraan", kode_prodi:"S1PPK", jenjang:"S1"},
+    {id_prodi:"P069", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Sejarah", kode_prodi:"S1PS", jenjang:"S1"},
+    {id_prodi:"P070", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Seni Pertunjukan", kode_prodi:"S1PSP", jenjang:"S1"},
+    {id_prodi:"P071", id_fakultas:"F006", nama_prodi:"S1 Pendidikan Sosiologi", kode_prodi:"S1PSos", jenjang:"S1"},
+    {id_prodi:"P072", id_fakultas:"F006", nama_prodi:"S2 Administrasi Pendidikan", kode_prodi:"S2AP", jenjang:"S2"},
+    {id_prodi:"P073", id_fakultas:"F006", nama_prodi:"S2 Pendidikan Bahasa Indonesia", kode_prodi:"S2PBI", jenjang:"S2"},
+    {id_prodi:"P074", id_fakultas:"F006", nama_prodi:"S2 Pendidikan Bahasa Inggris", kode_prodi:"S2PBIg", jenjang:"S2"},
+    {id_prodi:"P075", id_fakultas:"F006", nama_prodi:"S2 Pendidikan Ekonomi", kode_prodi:"S2PE", jenjang:"S2"},
+    {id_prodi:"P076", id_fakultas:"F006", nama_prodi:"S2 Pendidikan Matematika", kode_prodi:"S2PM", jenjang:"S2"},
+    {id_prodi:"P077", id_fakultas:"F006", nama_prodi:"S2 Pendidikan Sosiologi", kode_prodi:"S2PSos", jenjang:"S2"},
+    {id_prodi:"P078", id_fakultas:"F006", nama_prodi:"S2 PGSD", kode_prodi:"S2PGSD", jenjang:"S2"},
+    {id_prodi:"P079", id_fakultas:"F006", nama_prodi:"S2 Teknologi Pendidikan", kode_prodi:"S2TP", jenjang:"S2"},
+
+    // Fakultas Kehutanan F007
+    {id_prodi:"P080", id_fakultas:"F007", nama_prodi:"S1 Kehutanan", kode_prodi:"S1K", jenjang:"S1"},
+    {id_prodi:"P081", id_fakultas:"F007", nama_prodi:"S2 Ilmu Kehutanan", kode_prodi:"S2IK", jenjang:"S2"},
+
+    // Fakultas Matematika dan Ilmu Pengetahuan Alam F008
+    {id_prodi:"P082", id_fakultas:"F008", nama_prodi:"S1 Biologi", kode_prodi:"S1Bio", jenjang:"S1"},
+    {id_prodi:"P083", id_fakultas:"F008", nama_prodi:"S1 Fisika", kode_prodi:"S1Fis", jenjang:"S1"},
+    {id_prodi:"P084", id_fakultas:"F008", nama_prodi:"S1 Geofisika", kode_prodi:"S1Geo", jenjang:"S1"},
+    {id_prodi:"P085", id_fakultas:"F008", nama_prodi:"S1 Ilmu Kelautan", kode_prodi:"S1IKel", jenjang:"S1"},
+    {id_prodi:"P086", id_fakultas:"F008", nama_prodi:"S1 Kimia", kode_prodi:"S1Kim", jenjang:"S1"},
+    {id_prodi:"P087", id_fakultas:"F008", nama_prodi:"S1 Matematika", kode_prodi:"S1Mat", jenjang:"S1"},
+    {id_prodi:"P088", id_fakultas:"F008", nama_prodi:"S1 Rekayasa Sistem Komputer", kode_prodi:"S1RSK", jenjang:"S1"},
+    {id_prodi:"P089", id_fakultas:"F008", nama_prodi:"S1 Sistem Informasi", kode_prodi:"S1SI", jenjang:"S1"},
+    {id_prodi:"P090", id_fakultas:"F008", nama_prodi:"S1 Statistik", kode_prodi:"S1Stat", jenjang:"S1"},
+    {id_prodi:"P091", id_fakultas:"F008", nama_prodi:"S2 Program Studi Magister Kimia", kode_prodi:"S2Kim", jenjang:"S2"},
+
+    // Fakultas Kedokteran F009
+    {id_prodi:"P092", id_fakultas:"F009", nama_prodi:"Profesi Apoteker", kode_prodi:"ProfApt", jenjang:"Prof"},
+    {id_prodi:"P093", id_fakultas:"F009", nama_prodi:"Profesi Dokter", kode_prodi:"ProfDok", jenjang:"Prof"},
+    {id_prodi:"P094", id_fakultas:"F009", nama_prodi:"Profesi Ners", kode_prodi:"ProfNers", jenjang:"Prof"},
+    {id_prodi:"P095", id_fakultas:"F009", nama_prodi:"S1 Farmasi", kode_prodi:"S1F", jenjang:"S1"},
+    {id_prodi:"P096", id_fakultas:"F009", nama_prodi:"S1 Ilmu Keperawatan", kode_prodi:"S1IK", jenjang:"S1"},
+    {id_prodi:"P097", id_fakultas:"F009", nama_prodi:"S1 Kedokteran", kode_prodi:"S1Dok", jenjang:"S1"}
+];
+
+let currentPage = 1;
+const rowsPerPage = 10;
+
+// Simple function to get fakultas name for display
+function getFakultasName(id) {
+    const fakultasMap = {
+        "F001":"Fakultas Hukum",
+        "F002":"Fakultas Ekonomi & Bisnis",
+        "F003":"Fakultas Pertanian",
+        "F004":"Fakultas Teknik",
+        "F005":"Fakultas Ilmu Sosial dan Ilmu Politik",
+        "F006":"Fakultas Keguruan dan Ilmu Pendidikan",
+        "F007":"Fakultas Kehutanan",
+        "F008":"Fakultas Matematika dan Ilmu Pengetahuan Alam",
+        "F009":"Fakultas Kedokteran"
+    };
+    return fakultasMap[id] || id;
+}
+
+// ======= Render Table with Pagination =======
+function renderProdiTable() {
+    const tbody = document.querySelector("#prodiTable tbody");
+    tbody.innerHTML = "";
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageData = prodiData.slice(start, end);
+
+    pageData.forEach((p,index)=>{
+        const globalIndex = start + index;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${p.id_prodi}</td>
+            <td>${p.nama_prodi}</td>
+            <td>${p.kode_prodi}</td>
+            <td>${p.jenjang}</td>
+            <td>${getFakultasName(p.id_fakultas)}</td>
+            <td>
+                <button class="btn btn-sm btn-light me-2"><i class="fa fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+            </td>
+        `;
+
+        tr.querySelector(".btn-light").onclick = ()=>{
+            document.getElementById("modalMode").value="edit";
+            document.getElementById("modalIndex").value=globalIndex;
+            document.getElementById("modalNamaProdi").value=p.nama_prodi;
+            document.getElementById("modalKodeProdi").value=p.kode_prodi;
+            document.getElementById("modalJenjang").value=p.jenjang;
+            document.getElementById("modalFakultas").value=p.id_fakultas;
+            document.getElementById("prodiModalLabel").textContent="Edit Program Studi";
+        };
+
+        tr.querySelector(".btn-danger").onclick = ()=>{
+            if(confirm("Hapus program studi ini?")){
+                prodiData.splice(globalIndex,1);
+                if((currentPage-1)*rowsPerPage >= prodiData.length && currentPage>1) currentPage--;
+                renderProdiTable();
+            }
+        };
+
+        tbody.appendChild(tr);
+    });
+
+    renderPagination();
+}
+
+function renderPagination(){
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+    const pageCount = Math.ceil(prodiData.length / rowsPerPage);
+
+    // Previous
+    const prevLi = document.createElement("li");
+    prevLi.className = `page-item ${currentPage===1?"disabled":""}`;
+    prevLi.innerHTML = `<a class="page-link" href="#">Previous</a>`;
+    prevLi.onclick = (e)=>{e.preventDefault(); if(currentPage>1){currentPage--; renderProdiTable();}};
+    pagination.appendChild(prevLi);
+
+    // Pages
+    for(let i=1;i<=pageCount;i++){
+        const li = document.createElement("li");
+        li.className = `page-item ${currentPage===i?"active":""}`;
+        li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+        li.onclick = (e)=>{e.preventDefault(); currentPage=i; renderProdiTable();};
+        pagination.appendChild(li);
+    }
+
+    // Next
+    const nextLi = document.createElement("li");
+    nextLi.className = `page-item ${currentPage===pageCount?"disabled":""}`;
+    nextLi.innerHTML = `<a class="page-link" href="#">Next</a>`;
+    nextLi.onclick = (e)=>{e.preventDefault(); if(currentPage<pageCount){currentPage++; renderProdiTable();}};
+    pagination.appendChild(nextLi);
+}
+
+// ======= Handle Modal Submit =======
+document.getElementById("prodiForm").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    const mode = document.getElementById("modalMode").value;
+    const index = parseInt(document.getElementById("modalIndex").value);
+    const newProdi = {
+        id_prodi: mode==="add"?Date.now():prodiData[index].id_prodi,
+        nama_prodi: document.getElementById("modalNamaProdi").value,
+        kode_prodi: document.getElementById("modalKodeProdi").value,
+        jenjang: document.getElementById("modalJenjang").value,
+        id_fakultas: document.getElementById("modalFakultas").value
+    };
+    if(mode==="add") prodiData.push(newProdi);
+    else prodiData[index]=newProdi;
+    renderProdiTable();
+    const modalEl = document.getElementById("prodiModal");
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+});
+
+// Initial Render
+renderProdiTable();
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manajemen User - Sistem Akreditasi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {overflow-x: hidden;}
+#wrapper {display: flex; width: 100%; min-height: 100vh;}
+#sidebar-wrapper {
+    min-width: 250px; max-width: 250px;
+    background-color: #fff;
+    border-right:1px solid #ddd;
+    flex-shrink:0;
+    transition: all 0.3s;
+}
+#page-content-wrapper {flex-grow:1; transition: all 0.3s;}
+.profile-section{display:flex;align-items:center;padding:0.75rem 1rem;}
+.profile-section img{width:35px;height:35px;border-radius:50%;margin-right:10px;}
+@media (max-width:768px){
+    #sidebar-wrapper{margin-left:-250px;position:fixed;height:100%;z-index:1000;}
+    #sidebar-wrapper.active{margin-left:0;box-shadow:2px 0 5px rgba(0,0,0,0.3);}
+    #overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:900;}
+    #overlay.active{display:block;}
+}
+</style>
+</head>
+<body class="bg-light">
+<div id="wrapper">
+
+<!-- Sidebar -->
+<div class="border-end bg-white" id="sidebar-wrapper">
+    <div class="sidebar-heading text-primary fs-4 p-3">Sistem Akreditasi</div>
+    <div class="profile-section border-bottom mb-2">
+        <img id="userPic" src="https://via.placeholder.com/35" alt="Profile">
+        <div>
+            <div class="fw-bold" id="sidebarUserName"></div>
+            <span class="badge bg-info text-dark" id="sidebarUserRole"></span>
+        </div>
+    </div>
+
+    <div class="list-group list-group-flush mt-2" id="sidebarMenu"></div>
+
+    <button id="sidebarLogout" class="btn btn-outline-danger m-3 w-100">
+        <i class="fa fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper" class="w-100">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+            <button class="btn btn-primary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="me-3 text-muted" id="currentDate"></div>
+                <img id="userPicNav" src="https://via.placeholder.com/35" class="rounded-circle me-2" alt="Profile">
+                <span id="userName" class="fw-bold me-2"></span>
+                <span class="badge bg-secondary" id="userRoleNav"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4">
+        <h2 class="text-primary mb-4">Manajemen Data User</h2>
+
+        <!-- Add User Button -->
+        <div class="mb-3">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#userModal">
+                <i class="fa fa-plus"></i> Tambah User
+            </button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-responsive shadow-sm">
+            <table class="table table-striped table-bordered align-middle bg-white" id="userTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+<div id="overlay"></div>
+
+<!-- Modal Tambah/Edit User -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="userForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="userModalLabel">Tambah User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="modalMode" value="add">
+            <input type="hidden" id="modalIndex">
+            <div class="mb-3">
+                <label class="form-label">Nama</label>
+                <input type="text" class="form-control" id="modalName" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="modalEmail" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="modalPassword" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Role</label>
+                <select class="form-select" id="modalRole" required>
+                    <option value="Administrator">Administrator</option>
+                    <option value="Kepala LPMPP">Kepala LPMPP</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======= Current User & Sidebar =======
+const user = JSON.parse(localStorage.getItem('currentUser')) || {user_role:"Administrator", name:"Admin"};
+if(user.user_role !== "Administrator"){
+    alert("Hanya Administrator yang dapat mengakses halaman ini!");
+    window.location.href="dashboard.html";
+}
+document.getElementById('userName').textContent = user.name;
+document.getElementById('userRoleNav').textContent = user.user_role;
+document.getElementById('sidebarUserName').textContent = user.name;
+document.getElementById('sidebarUserRole').textContent = user.user_role;
+document.getElementById('userPic').src = "https://via.placeholder.com/35";
+document.getElementById('userPicNav').src = "https://via.placeholder.com/35";
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+
+// ======= Sidebar Menu =======
+const menuItems = {
+    "Administrator": [
+        {text:"Dashboard", href:"dashboard.html", icon:"fa-tachometer-alt"},
+        {text:"Manajemen Data User", href:"manajemen_user.html", icon:"fa-user-shield"},
+        {text:"Manajemen Data Prodi", href:"manajemen_prodi.html", icon:"fa-graduation-cap"},
+        {text:"Manajemen Data Fakultas", href:"manajemen_fakultas.html", icon:"fa-building"},
+        {text:"Manajemen Data Akreditasi", href:"manajemen_akreditasi.html", icon:"fa-book"},
+        {text:"Transaksi Status Akreditasi", href:"transaksi_status.html", icon:"fa-exchange-alt"},
+        {text:"Laporan Detail Akreditasi", href:"laporan_detail.html", icon:"fa-file-alt"},
+        {text:"Laporan Rekapitulasi Akreditasi", href:"laporan_rekap.html", icon:"fa-file"}
+    ]
+};
+const sidebarMenu = document.getElementById('sidebarMenu');
+menuItems[user.user_role].forEach(item => {
+    const a = document.createElement('a');
+    a.href = item.href;
+    a.className = "list-group-item list-group-item-action bg-light d-flex align-items-center";
+    a.innerHTML = `<i class="fa ${item.icon} me-2"></i>${item.text}`;
+    if(window.location.pathname.endsWith(item.href)) a.classList.add("active","bg-primary","text-white");
+    sidebarMenu.appendChild(a);
+});
+
+// ======= Logout & Sidebar Toggle =======
+document.getElementById('sidebarLogout').addEventListener('click',()=>{ localStorage.removeItem('currentUser'); window.location.href="login.html"; });
+const sidebarWrapper = document.getElementById('sidebar-wrapper');
+const overlay = document.getElementById('overlay');
+document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebarWrapper.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click',()=>{ sidebarWrapper.classList.remove('active'); overlay.classList.remove('active'); });
+
+// ======= Dummy Users Data =======
+let usersData = [
+    {user_id:"U001", nama:"Bajanathan Gael", password:"123", email:"bajanathangael@itbss.ac.id", user_role:"Kepala LPMPP"},
+    {user_id:"U002", nama:"Theresa Natasha", password:"123", email:"theresanatasha@itbss.ac.id", user_role:"Administrator"},
+    {user_id:"U003", nama:"Lukas Jevon Jeffrey", password:"123", email:"lukasjevonjeffrey@itbss.ac.id", user_role:"Administrator"},
+    {user_id:"U004", nama:"Lim Hak Meng", password:"123", email:"limhakmeng@itbss.ac.id", user_role:"Administrator"}
+];
+
+// ======= Render User Table =======
+function renderUserTable(){
+    const tbody = document.querySelector("#userTable tbody");
+    tbody.innerHTML = "";
+    usersData.forEach((u,index)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${u.user_id}</td>
+            <td>${u.nama}</td>
+            <td>${u.email}</td>
+            <td>${u.user_role}</td>
+            <td>
+                <button class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#userModal"><i class="fa fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+            </td>
+        `;
+        // Edit
+        tr.querySelector(".btn-light").onclick = ()=>{
+            document.getElementById("modalMode").value="edit";
+            document.getElementById("modalIndex").value=index;
+            document.getElementById("modalName").value=u.nama;
+            document.getElementById("modalEmail").value=u.email;
+            document.getElementById("modalPassword").value=u.password;
+            document.getElementById("modalRole").value=u.user_role;
+            document.getElementById("userModalLabel").textContent="Edit User";
+        };
+        // Delete
+        tr.querySelector(".btn-danger").onclick = ()=>{
+            if(confirm("Hapus user ini?")){
+                usersData.splice(index,1);
+                renderUserTable();
+            }
+        };
+        tbody.appendChild(tr);
+    });
+}
+
+// ======= Modal Submit =======
+document.getElementById("userForm").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    const mode = document.getElementById("modalMode").value;
+    const index = parseInt(document.getElementById("modalIndex").value);
+    const newUser = {
+        user_id: mode==="add"?Date.now():usersData[index].user_id,
+        nama: document.getElementById("modalName").value,
+        email: document.getElementById("modalEmail").value,
+        password: document.getElementById("modalPassword").value,
+        user_role: document.getElementById("modalRole").value
+    };
+    if(mode==="add") usersData.push(newUser);
+    else usersData[index]=newUser;
+    renderUserTable();
+    const modalEl = document.getElementById("userModal");
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+});
+
+// Initial Render
+renderUserTable();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
